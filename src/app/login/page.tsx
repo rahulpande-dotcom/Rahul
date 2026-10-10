@@ -93,13 +93,12 @@ function LoginForm() {
       // Redirect based on role
       const userRole = data.user.role;
       if (userRole === "admin") {
-        router.push("/admin/dashboard");
+        window.location.href = "/admin/dashboard";
       } else if (userRole === "staff" || userRole === "doctor") {
-        router.push("/staff/dashboard");
+        window.location.href = "/staff/dashboard";
       } else {
-        router.push("/patient/dashboard");
+        window.location.href = "/patient/dashboard";
       }
-      router.refresh();
     } catch (err: any) {
       setErrorMessage("Network error while logging in. Please retry.");
       setIsLoading(false);

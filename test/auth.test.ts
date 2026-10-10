@@ -15,8 +15,19 @@ describe("Authentication & 4-Character CAPTCHA Verification", () => {
   it("fails verification with incorrect code", () => {
     const captcha = generateCaptcha();
     const result = verifyCaptcha("ZZZZ", captcha.token);
-    // Since ZZZZ is extremely unlikely to match random 4-char string
-    expect(typeof result).toBe("boolean");
+    expect(result).toBe(false);
+  });
+
+  it("succeeds verification with correct code (case-insensitive and trimmed)", () => {
+    const captcha = generateCaptcha();
+    // decode answer from token
+    const raw = Buffer.from(captcha.token, "base64").toString("utf-8");
+    const [answer] = raw.split(":");
+    expect(answer).toHaveLength(4);
+
+    expect(verifyCaptcha(answer, captcha.token)).toBe(true);
+    expect(verifyCaptcha(answer.toLowerCase(), captcha.token)).toBe(true);
+    expect(verifyCaptcha(`  ${answer}  `, captcha.token)).toBe(true);
   });
 
   it("handles empty or missing tokens safely without throwing", () => {

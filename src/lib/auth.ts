@@ -2,8 +2,14 @@ import { cookies } from "next/headers";
 import { UserProfile, UserRole } from "./types";
 import { db } from "./db";
 
-const COOKIE_NAME = "queueless_session";
-const REMEMBER_ME_COOKIE = "queueless_remember";
+export const COOKIE_NAME = "queueless_session";
+export const REMEMBER_ME_COOKIE = "queueless_remember";
+
+export function isSecureContext(): boolean {
+  if (process.env.NODE_ENV !== "production") return false;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "";
+  return appUrl.startsWith("https://");
+}
 
 export interface SessionData {
   userId: string;
@@ -70,10 +76,11 @@ export async function setSessionCookie(user: UserProfile, rememberMe = false) {
   const token = signSession(user, rememberMe);
   const cookieStore = cookies();
   const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+  const secure = isSecureContext();
 
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     sameSite: "lax",
     path: "/",
     maxAge,
@@ -88,7 +95,7 @@ export async function setSessionCookie(user: UserProfile, rememberMe = false) {
     };
     cookieStore.set(REMEMBER_ME_COOKIE, JSON.stringify(suggestionData), {
       httpOnly: false, // Accessible to client for Remember Me suggestion chips
-      secure: process.env.NODE_ENV === "production",
+      secure,
       sameSite: "lax",
       path: "/",
       maxAge: 30 * 24 * 60 * 60,

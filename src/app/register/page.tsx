@@ -101,10 +101,9 @@ export default function RegisterPage() {
         return;
       }
 
-      router.push("/patient/dashboard");
-      router.refresh();
+      window.location.href = "/patient/dashboard";
     } catch (err) {
-      setErrorMessage("Network error occurred during registration.");
+      setErrorMessage("Network error occurred during registration. Please retry.");
       setIsLoading(false);
     }
   };
@@ -239,6 +238,19 @@ export default function RegisterPage() {
                       className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
+                </div>
+
+                {/* Residential Address */}
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-700">Residential Address</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Street, City, Postal Code"
+                    className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                  />
                 </div>
 
                 {/* Password & Confirm */}

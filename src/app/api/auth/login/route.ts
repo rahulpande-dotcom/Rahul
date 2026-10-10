@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { setSessionCookie } from "@/lib/auth";
+import { setSessionCookie, signSession, COOKIE_NAME, REMEMBER_ME_COOKIE, isSecureContext } from "@/lib/auth";
 import { verifyCaptcha } from "@/lib/captcha";
 import { UserRole } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     // Verify 4-character CAPTCHA
     if (!captchaInput || !captchaToken || !verifyCaptcha(captchaInput, captchaToken)) {
-      return NextResponse.json({ error: "Invalid or expired 4-character CAPTCHA code" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid or expired 4-character CAPTCHA code. Please enter the characters shown." }, { status: 400 });
     }
 
     // Lookup user in DB
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Standard demo password matching or general password check
+    // Standard demo password matching or custom registered password
     const validPasswords: Record<string, string> = {
       "admin@queueless.ai": "Admin@123",
       "staff@queueless.ai": "Staff@123",
@@ -43,12 +45,12 @@ export async function POST(req: NextRequest) {
       "patient@queueless.ai": "Patient@123",
     };
 
-    const expectedPassword = validPasswords[user.email.toLowerCase()];
-    if (expectedPassword && password !== expectedPassword && password !== "Password@123") {
+    const expectedPassword = user.password || validPasswords[user.email.toLowerCase()] || "Password@123";
+    if (password !== expectedPassword && password !== "Password@123") {
       return NextResponse.json({ error: "Invalid password credentials" }, { status: 401 });
     }
 
-    // Set cookie
+    // Set cookie via helper
     await setSessionCookie(user, Boolean(rememberMe));
 
     // Audit log
@@ -64,7 +66,39 @@ export async function POST(req: NextRequest) {
       ipAddress: req.headers.get("x-forwarded-for") || "127.0.0.1",
     });
 
-    return NextResponse.json({ success: true, user });
+    // Explicitly set cookie headers on response to guarantee browser persistence
+    const token = signSession(user, Boolean(rememberMe));
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+    const secure = isSecureContext();
+
+    const response = NextResponse.json({ success: true, user });
+    response.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      secure,
+      sameSite: "lax",
+      path: "/",
+      maxAge,
+    });
+    if (rememberMe) {
+      response.cookies.set(
+        REMEMBER_ME_COOKIE,
+        JSON.stringify({
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          lastLogin: new Date().toISOString(),
+        }),
+        {
+          httpOnly: false,
+          secure,
+          sameSite: "lax",
+          path: "/",
+          maxAge: 30 * 24 * 60 * 60,
+        }
+      );
+    }
+
+    return response;
   } catch (err: any) {
     console.error("Login route error:", err);
     return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });

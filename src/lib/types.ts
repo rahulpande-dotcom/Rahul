@@ -24,6 +24,7 @@ export interface UserProfile {
   emergencyContact?: string;
   uhid?: string; // Unique Health ID: e.g. QL-2026-8819
   address?: string;
+  password?: string;
   createdAt: string;
   updatedAt: string;
 }

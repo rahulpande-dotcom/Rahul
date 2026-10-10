@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { generateTokenNumber } from "@/lib/utils";
 import { EmergencyCase, Token } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const cases = await db.getEmergencyCases();
   return NextResponse.json(cases);
