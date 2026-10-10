@@ -288,6 +288,38 @@
       "uhid": "QL-2026-9481",
       "createdAt": "2026-10-10T14:39:56.447Z",
       "updatedAt": "2026-10-10T14:39:56.447Z"
+    },
+    {
+      "id": "usr-1791643375153",
+      "email": "live-test-1791643375087@queueless.ai",
+      "name": "Localhost Test Patient",
+      "role": "patient",
+      "phone": "+1 555-019-9944",
+      "age": 30,
+      "gender": "female",
+      "bloodGroup": "A+",
+      "emergencyContact": "+1 555-019-0000",
+      "address": "42 Localhost Way",
+      "password": "MySecurePassword@123",
+      "uhid": "QL-2026-1547",
+      "createdAt": "2026-10-10T14:42:55.153Z",
+      "updatedAt": "2026-10-10T14:42:55.153Z"
+    },
+    {
+      "id": "usr-1791643475620",
+      "email": "rahulpande97098@gmail.com",
+      "name": "rahul mp",
+      "role": "patient",
+      "phone": "+919886105901",
+      "age": 20,
+      "gender": "male",
+      "bloodGroup": "O+",
+      "emergencyContact": "4444444444",
+      "address": "banglore",
+      "password": "1234567",
+      "uhid": "QL-2026-7200",
+      "createdAt": "2026-10-10T14:44:35.620Z",
+      "updatedAt": "2026-10-10T14:44:35.620Z"
     }
   ],
   "tokens": [
@@ -407,9 +439,48 @@
       "generatedAt": "2026-10-10T12:07:06.253Z",
       "checkInAt": "2026-10-10T12:07:06.253Z",
       "calledAt": "2026-10-10T12:07:06.253Z"
+    },
+    {
+      "id": "tok-1791643506642",
+      "tokenNumber": "OPD-GEN-878",
+      "departmentId": "dept-gen",
+      "departmentName": "General Medicine",
+      "departmentCode": "GEN",
+      "doctorId": "doc-1",
+      "doctorName": "Dr. Sarah Mitchell, MD",
+      "roomNumber": "Room 101",
+      "patientId": "usr-1791643475620",
+      "patientName": "rahul mp",
+      "patientPhone": "+919886105901",
+      "isEmergency": false,
+      "priority": "NORMAL",
+      "status": "WAITING",
+      "type": "ONLINE",
+      "queuePosition": 3,
+      "estimatedWaitMinutes": 24,
+      "symptoms": "General OPD Consultation",
+      "generatedAt": "2026-10-10T14:45:06.642Z",
+      "checkInAt": "2026-10-10T14:45:06.642Z"
     }
   ],
   "appointments": [
+    {
+      "id": "apt-1791643506643",
+      "patientId": "usr-1791643475620",
+      "patientName": "rahul mp",
+      "patientPhone": "+919886105901",
+      "patientEmail": "rahulpande97098@gmail.com",
+      "doctorId": "doc-1",
+      "doctorName": "Dr. Sarah Mitchell, MD",
+      "departmentId": "dept-gen",
+      "departmentName": "General Medicine",
+      "date": "2026-10-10",
+      "timeSlot": "10:00 AM",
+      "reason": "General OPD Consultation",
+      "status": "CHECKED_IN",
+      "tokenId": "tok-1791643506642",
+      "createdAt": "2026-10-10T14:45:06.643Z"
+    },
     {
       "id": "apt-1",
       "patientId": "usr-patient",
@@ -540,6 +611,50 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "log-1791643506644",
+      "timestamp": "2026-10-10T14:45:06.644Z",
+      "actorEmail": "rahulpande97098@gmail.com",
+      "actorRole": "patient",
+      "action": "APPOINTMENT_BOOKED",
+      "entityType": "APPOINTMENT",
+      "entityId": "apt-1791643506643",
+      "details": "Appointment booked with Dr. Sarah Mitchell, MD on 2026-10-10 at 10:00 AM. Token: tok-1791643506642",
+      "ipAddress": "::1"
+    },
+    {
+      "id": "log-1791643475621",
+      "timestamp": "2026-10-10T14:44:35.621Z",
+      "actorEmail": "rahulpande97098@gmail.com",
+      "actorRole": "patient",
+      "action": "PATIENT_REGISTERED",
+      "entityType": "PATIENT",
+      "entityId": "usr-1791643475620",
+      "details": "New patient registered: rahul mp (UHID: QL-2026-7200)",
+      "ipAddress": "::1"
+    },
+    {
+      "id": "log-1791643375188",
+      "timestamp": "2026-10-10T14:42:55.188Z",
+      "actorEmail": "live-test-1791643375087@queueless.ai",
+      "actorRole": "patient",
+      "action": "USER_LOGIN_SUCCESS",
+      "entityType": "AUTH",
+      "entityId": "usr-1791643375153",
+      "details": "User logged into patient portal. RememberMe: false",
+      "ipAddress": "::ffff:127.0.0.1"
+    },
+    {
+      "id": "log-1791643375156",
+      "timestamp": "2026-10-10T14:42:55.156Z",
+      "actorEmail": "live-test-1791643375087@queueless.ai",
+      "actorRole": "patient",
+      "action": "PATIENT_REGISTERED",
+      "entityType": "PATIENT",
+      "entityId": "usr-1791643375153",
+      "details": "New patient registered: Localhost Test Patient (UHID: QL-2026-1547)",
+      "ipAddress": "::ffff:127.0.0.1"
+    },
     {
       "id": "log-1791634026254",
       "timestamp": "2026-10-10T12:07:06.254Z",
