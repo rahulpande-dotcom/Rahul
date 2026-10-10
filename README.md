@@ -182,3 +182,4 @@ src/app/
 - **Server-Side Authorization:** Route layouts enforce role checks on the server; tampering with frontend state cannot bypass portal access.
 - **Sensitive Key Protection:** `SUPABASE_SERVICE_ROLE_KEY` and CAPTCHA answers are never exposed to browser clients.
 - **Sanitized Healthcare PDFs:** Medical reports generated server-side using immutable patient consultation snapshots.
+# Rahul
