@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie, signSession, COOKIE_NAME, REMEMBER_ME_COOKIE, isSecureContext } from "@/lib/auth";
-import { verifyCaptcha } from "@/lib/captcha";
 import { UserRole } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -9,15 +8,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, password, role, captchaInput, captchaToken, rememberMe } = body;
+    const { email, password, role, rememberMe } = body;
 
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
-    }
-
-    // Verify 4-character CAPTCHA
-    if (!captchaInput || !captchaToken || !verifyCaptcha(captchaInput, captchaToken)) {
-      return NextResponse.json({ error: "Invalid or expired 4-character CAPTCHA code. Please enter the characters shown." }, { status: 400 });
     }
 
     // Lookup user in DB

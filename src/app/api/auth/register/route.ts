@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie, signSession, COOKIE_NAME, REMEMBER_ME_COOKIE, isSecureContext } from "@/lib/auth";
-import { verifyCaptcha } from "@/lib/captcha";
 import { generateUHID } from "@/lib/utils";
 import { UserProfile } from "@/lib/types";
 
@@ -20,17 +19,11 @@ export async function POST(req: NextRequest) {
       emergencyContact,
       address,
       password,
-      captchaInput,
-      captchaToken,
     } = body;
 
     // Validation
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Name, email, and password are required" }, { status: 400 });
-    }
-
-    if (!captchaInput || !captchaToken || !verifyCaptcha(captchaInput, captchaToken)) {
-      return NextResponse.json({ error: "Invalid or expired 4-character CAPTCHA code. Please re-enter the code." }, { status: 400 });
     }
 
     // Check duplicate

@@ -272,6 +272,22 @@
       "uhid": "QL-2026-5248",
       "createdAt": "2026-10-10T14:28:16.213Z",
       "updatedAt": "2026-10-10T14:28:16.213Z"
+    },
+    {
+      "id": "usr-1791643196447",
+      "email": "patient-direct-1791643196447@example.com",
+      "name": "Alice Walker",
+      "role": "patient",
+      "phone": "+1-555-898-1234",
+      "age": 28,
+      "gender": "female",
+      "bloodGroup": "B+",
+      "emergencyContact": "+1-555-898-9999",
+      "address": "123 Health Ave, Metro City",
+      "password": "MySecurePassword@123",
+      "uhid": "QL-2026-9481",
+      "createdAt": "2026-10-10T14:39:56.447Z",
+      "updatedAt": "2026-10-10T14:39:56.447Z"
     }
   ],
   "tokens": [

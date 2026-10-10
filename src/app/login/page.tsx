@@ -8,7 +8,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { CaptchaField } from "@/components/auth/CaptchaField";
 import { RememberMeSuggestions } from "@/components/auth/RememberMeSuggestions";
 import {
   Lock,
@@ -27,11 +26,6 @@ function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-
-  const [captchaData, setCaptchaData] = useState<{ captchaInput: string; captchaToken: string }>({
-    captchaInput: "",
-    captchaToken: "",
-  });
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -61,11 +55,6 @@ function LoginForm() {
       return;
     }
 
-    if (!captchaData.captchaInput || captchaData.captchaInput.length !== 4) {
-      setErrorMessage("Please enter the 4-character CAPTCHA code shown.");
-      return;
-    }
-
     setIsLoading(true);
 
     try {
@@ -76,8 +65,6 @@ function LoginForm() {
           email,
           password,
           role: activeRole,
-          captchaInput: captchaData.captchaInput,
-          captchaToken: captchaData.captchaToken,
           rememberMe,
         }),
       });
@@ -116,7 +103,7 @@ function LoginForm() {
           Hospital Portal Sign In
         </h1>
         <p className="text-xs text-slate-500">
-          Select your role and authenticate with secure 4-character verification
+          Select your role and authenticate with your password
         </p>
       </div>
 
@@ -192,16 +179,6 @@ function LoginForm() {
                 className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
               />
             </div>
-
-            {/* 4-Character CAPTCHA */}
-            <CaptchaField
-              onCaptchaChange={setCaptchaData}
-              error={
-                captchaData.captchaInput.length > 0 && captchaData.captchaInput.length < 4
-                  ? "Enter exactly 4 characters"
-                  : undefined
-              }
-            />
 
             {/* Remember Me */}
             <div className="flex items-center justify-between text-xs pt-1">

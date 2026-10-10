@@ -7,7 +7,6 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
-import { CaptchaField } from "@/components/auth/CaptchaField";
 import {
   User,
   Mail,
@@ -38,11 +37,6 @@ export default function RegisterPage() {
     acceptTerms: true,
   });
 
-  const [captchaData, setCaptchaData] = useState<{ captchaInput: string; captchaToken: string }>({
-    captchaInput: "",
-    captchaToken: "",
-  });
-
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -70,11 +64,6 @@ export default function RegisterPage() {
       return;
     }
 
-    if (!captchaData.captchaInput || captchaData.captchaInput.length !== 4) {
-      setErrorMessage("Please enter the 4-character CAPTCHA code shown.");
-      return;
-    }
-
     if (!formData.acceptTerms) {
       setErrorMessage("You must agree to the Terms of Service and Privacy Notice.");
       return;
@@ -86,11 +75,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          captchaInput: captchaData.captchaInput,
-          captchaToken: captchaData.captchaToken,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
@@ -281,9 +266,6 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
-
-                {/* 4-Character CAPTCHA */}
-                <CaptchaField onCaptchaChange={setCaptchaData} />
 
                 {/* Terms agreement */}
                 <div className="pt-2">
