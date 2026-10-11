@@ -2,9 +2,11 @@ export type UserRole = "admin" | "staff" | "doctor" | "patient";
 
 export type TokenStatus =
   | "WAITING"
+  | "CHECKED_IN"
   | "CALLED"
   | "IN_CONSULTATION"
   | "COMPLETED"
+  | "CHECKED_OUT"
   | "CANCELLED"
   | "NO_SHOW";
 
@@ -25,6 +27,7 @@ export interface UserProfile {
   uhid?: string; // Unique Health ID: e.g. QL-2026-8819
   address?: string;
   password?: string;
+  isDemo?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -92,6 +95,7 @@ export interface Token {
   queuePosition: number;
   estimatedWaitMinutes: number;
   symptoms?: string;
+  isDemo?: boolean;
   generatedAt: string;
   checkInAt?: string;
   calledAt?: string;

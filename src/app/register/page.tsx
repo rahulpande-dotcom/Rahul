@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent } from "@/components/ui/Card";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import {
   User,
   Mail,
@@ -242,27 +243,23 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-700">Password *</label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       name="password"
                       required
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="Minimum 6 chars"
-                      className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-700">Confirm Password *</label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       name="confirmPassword"
                       required
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="Repeat password"
-                      className="w-full px-3.5 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                     />
                   </div>
                 </div>

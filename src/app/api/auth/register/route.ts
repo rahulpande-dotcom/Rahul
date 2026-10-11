@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { setSessionCookie, signSession, COOKIE_NAME, REMEMBER_ME_COOKIE, isSecureContext } from "@/lib/auth";
 import { generateUHID } from "@/lib/utils";
+import { randomUUID } from "crypto";
 import { UserProfile } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const newProfile: UserProfile = {
-      id: `usr-${Date.now()}`,
+      id: randomUUID(),
       email: email.trim().toLowerCase(),
       name: name.trim(),
       role: "patient",

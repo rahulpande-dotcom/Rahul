@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { generateTokenNumber, calculateWaitTime } from "@/lib/utils";
+import { randomUUID } from "crypto";
 import { Token, TokenPriority } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
@@ -13,10 +14,14 @@ export async function GET(req: NextRequest) {
 
   let tokens = await db.getTokens();
 
-  if (departmentId) {
-    tokens = tokens.filter((t) => t.departmentId === departmentId);
+  if (departmentId && departmentId !== "ALL") {
+    tokens = tokens.filter(
+      (t) =>
+        t.departmentId === departmentId ||
+        t.departmentCode?.toLowerCase() === departmentId.toLowerCase()
+    );
   }
-  if (doctorId) {
+  if (doctorId && doctorId !== "ALL") {
     tokens = tokens.filter((t) => t.doctorId === doctorId);
   }
   if (status) {
@@ -69,7 +74,7 @@ export async function POST(req: NextRequest) {
     const tokenNumber = generateTokenNumber(dept.code, isEmergency, priority as TokenPriority);
 
     const newToken: Token = {
-      id: `tok-${Date.now()}`,
+      id: randomUUID(),
       tokenNumber,
       departmentId: dept.id,
       departmentName: dept.name,
