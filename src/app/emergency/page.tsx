@@ -116,12 +116,24 @@ export default function EmergencyPage() {
             <Siren className="w-5 h-5 animate-spin shrink-0" />
             <span>24/7 TRAUMA & ACUTE RESUSCITATION WING • NO AUTHENTICATION REQUIRED</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <a
-              href="tel:911"
-              className="bg-white text-red-700 px-3 py-1 rounded font-extrabold hover:bg-red-50 flex items-center gap-1.5"
+              href="tel:108"
+              className="bg-white text-red-700 px-2.5 py-1 rounded font-extrabold hover:bg-red-50 flex items-center gap-1.5 text-xs shadow"
             >
-              <PhoneCall className="w-3.5 h-3.5" /> Ambulance: 911 / 108
+              <PhoneCall className="w-3.5 h-3.5" /> Ambulance: 108
+            </a>
+            <a
+              href="tel:+91809114357"
+              className="bg-red-800 text-white px-2.5 py-1 rounded font-bold hover:bg-red-700 flex items-center gap-1.5 text-xs border border-red-500"
+            >
+              BLR: +91 (80) 911-4357
+            </a>
+            <a
+              href="tel:+918162278255"
+              className="bg-red-800 text-white px-2.5 py-1 rounded font-bold hover:bg-red-700 flex items-center gap-1.5 text-xs border border-red-500"
+            >
+              TMK: +91 (816) 227-8255
             </a>
           </div>
         </div>
@@ -211,6 +223,76 @@ export default function EmergencyPage() {
               <Activity className="w-5 h-5 text-red-400" />
               Rapid Patient Triage Intake
             </h2>
+
+            {/* Mobile-Friendly Urgency Level Cards */}
+            <div className="space-y-3">
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
+                Select Urgency Level (Mobile Quick-Choice):
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {[
+                  {
+                    id: "CRITICAL_LIFE_THREATENING",
+                    level: "LEVEL_1_RESUSCITATION",
+                    label: "Critical",
+                    desc: "Life-Threatening / Unconscious / Severe Trauma",
+                    bg: "bg-red-950/80 border-red-500 text-red-200",
+                    badge: "LEVEL 1 • RED",
+                    preset: "Critical life-threatening acute trauma / respiratory collapse",
+                  },
+                  {
+                    id: "SERIOUS_URGENT",
+                    level: "LEVEL_2_EMERGENT",
+                    label: "Serious",
+                    desc: "Severe Pain / High Fever / Acute Bleeding",
+                    bg: "bg-amber-950/80 border-amber-500 text-amber-200",
+                    badge: "LEVEL 2 • ORANGE",
+                    preset: "Acute emergent distress requiring attention within 10 minutes",
+                  },
+                  {
+                    id: "OTHER_EMERGENCY",
+                    level: "LEVEL_3_URGENT",
+                    label: "Other Urgent",
+                    desc: "Fracture / Persistent Vomiting / Sprain",
+                    bg: "bg-yellow-950/80 border-yellow-500 text-yellow-200",
+                    badge: "LEVEL 3 • YELLOW",
+                    preset: "Urgent non-resuscitation emergency need",
+                  },
+                  {
+                    id: "CUSTOM",
+                    level: "LEVEL_2_EMERGENT",
+                    label: "Custom",
+                    desc: "Describe Specific Condition Below",
+                    bg: "bg-slate-800 border-slate-500 text-slate-200",
+                    badge: "MANUAL TRIAGE",
+                    preset: "",
+                  },
+                ].map((choice) => (
+                  <button
+                    key={choice.id}
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        triageLevel: choice.level,
+                        chiefComplaint: choice.preset || prev.chiefComplaint,
+                      }));
+                    }}
+                    className={`p-3 rounded-xl border-2 text-left transition-all hover:scale-[1.02] flex flex-col justify-between ${
+                      formData.triageLevel === choice.level ? `${choice.bg} ring-2 ring-white/50` : "bg-slate-900 border-slate-700 text-slate-400"
+                    }`}
+                  >
+                    <div>
+                      <span className="text-[10px] font-black uppercase tracking-wider block opacity-75">
+                        {choice.badge}
+                      </span>
+                      <span className="text-sm font-black text-white block mt-0.5">{choice.label}</span>
+                    </div>
+                    <span className="text-[11px] leading-tight block mt-1.5 opacity-80">{choice.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Quick Symptom Chips */}
             <div className="space-y-2">

@@ -3,17 +3,32 @@ import path from "path";
 import { randomUUID } from "crypto";
 import {
   UserProfile,
+  Hospital,
   Department,
   Doctor,
   Appointment,
   Token,
   Visit,
+  Bill,
+  BillItem,
+  BillingItemCategory,
+  ProcedureRecord,
+  AiClinicalSuggestion,
+  AppNotification,
   EmergencyCase,
   AuditLog,
   HospitalSettings,
   TokenStatus,
   TokenPriority,
+  UserRole,
 } from "./types";
+import {
+  INITIAL_HOSPITALS,
+  INITIAL_DEPARTMENTS,
+  INITIAL_DOCTORS,
+  INITIAL_BILLS,
+  INITIAL_PROCEDURES,
+} from "./seed-data";
 import { getSupabaseServerClient, isSupabaseConfigured } from "./supabase";
 import { calculateWaitTime } from "./utils";
 
@@ -25,6 +40,7 @@ const TMP_DB_FILE = path.join(TMP_DIR, "db.json");
 
 interface DatabaseState {
   profiles: UserProfile[];
+  hospitals: Hospital[];
   departments: Department[];
   doctors: Doctor[];
   appointments: Appointment[];
@@ -33,152 +49,37 @@ interface DatabaseState {
   emergencyCases: EmergencyCase[];
   auditLogs: AuditLog[];
   settings: HospitalSettings;
+  bills: Bill[];
+  procedures: ProcedureRecord[];
+  aiSuggestions: AiClinicalSuggestion[];
+  notifications: AppNotification[];
 }
 
 const INITIAL_STATE: DatabaseState = {
   settings: {
     hospitalName: "QueueLess AI Smart Hospital",
-    tagline: "Next-Gen Digital Token & Intelligent OPD Flow",
-    contactPhone: "+1 (800) 555-QUEUE",
-    emergencyHotline: "+1 (800) 911-HELP",
-    address: "450 Healthcare Boulevard, Suite 100, Metro City",
+    tagline: "Next-Gen Digital Token & Intelligent OPD Flow Hub",
+    contactPhone: "+91 (80) 2658-9111",
+    emergencyHotline: "+91 (80) 911-4357",
+    address: "450 9th Main Road, Jayanagar 4th Block, Bengaluru, Karnataka 560011",
     opdStartTime: "08:00 AM",
     opdEndTime: "06:00 PM",
     defaultAvgConsultationMins: 12,
     autoCallNextEnabled: true,
     smsNotificationEnabled: true,
     maxTokensPerDoctorDay: 40,
+    defaultConsultationFeeInr: 1500,
+    currencySymbol: "₹",
   },
-  departments: [
-    {
-      id: "dept-gen",
-      name: "General Medicine",
-      code: "GEN",
-      floor: "Ground Floor (Wing A)",
-      description: "Primary healthcare, acute illness, viral fever, preventive wellness",
-      avgConsultationMinutes: 10,
-      activeDoctorsCount: 4,
-      iconName: "Activity",
-    },
-    {
-      id: "dept-car",
-      name: "Cardiology",
-      code: "CAR",
-      floor: "2nd Floor (Wing B)",
-      description: "Heart diagnostics, hypertension, ECG, cardiovascular care",
-      avgConsultationMinutes: 15,
-      activeDoctorsCount: 3,
-      iconName: "Heart",
-    },
-    {
-      id: "dept-ped",
-      name: "Pediatrics",
-      code: "PED",
-      floor: "1st Floor (Wing C)",
-      description: "Child health, immunization, pediatric infections & development",
-      avgConsultationMinutes: 12,
-      activeDoctorsCount: 3,
-      iconName: "Baby",
-    },
-    {
-      id: "dept-ort",
-      name: "Orthopedics",
-      code: "ORT",
-      floor: "Ground Floor (Wing B)",
-      description: "Bones, joints, sports injury, arthroscopy & fracture care",
-      avgConsultationMinutes: 15,
-      activeDoctorsCount: 2,
-      iconName: "Bone",
-    },
-    {
-      id: "dept-neu",
-      name: "Neurology",
-      code: "NEU",
-      floor: "3rd Floor (Wing A)",
-      description: "Brain & nervous system disorders, migraines, stroke rehabilitation",
-      avgConsultationMinutes: 20,
-      activeDoctorsCount: 2,
-      iconName: "Brain",
-    },
-    {
-      id: "dept-emg",
-      name: "Emergency & Trauma",
-      code: "EMG",
-      floor: "Ground Floor (ER Bay)",
-      description: "24/7 Acute trauma, resuscitation, cardiac arrest & triage bay",
-      avgConsultationMinutes: 5,
-      activeDoctorsCount: 5,
-      iconName: "AlertTriangle",
-    },
-  ],
-  doctors: [
-    {
-      id: "doc-1",
-      name: "Dr. Sarah Mitchell, MD",
-      departmentId: "dept-gen",
-      departmentName: "General Medicine",
-      specialization: "Internal Medicine Specialist",
-      roomNumber: "Room 101",
-      consultationFee: 500,
-      availableDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-      isAvailableToday: true,
-    },
-    {
-      id: "doc-2",
-      name: "Dr. Arjun Mehta, DM",
-      departmentId: "dept-car",
-      departmentName: "Cardiology",
-      specialization: "Senior Interventional Cardiologist",
-      roomNumber: "Room 204",
-      consultationFee: 800,
-      availableDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      isAvailableToday: true,
-    },
-    {
-      id: "doc-3",
-      name: "Dr. Emily Chen, MD",
-      departmentId: "dept-ped",
-      departmentName: "Pediatrics",
-      specialization: "Chief Pediatrician & Neonatologist",
-      roomNumber: "Room 112",
-      consultationFee: 600,
-      availableDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
-      isAvailableToday: true,
-    },
-    {
-      id: "doc-4",
-      name: "Dr. Marcus Reynolds, MS",
-      departmentId: "dept-ort",
-      departmentName: "Orthopedics",
-      specialization: "Orthopedic Surgeon & Joint Replacement",
-      roomNumber: "Room 108",
-      consultationFee: 750,
-      availableDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-      isAvailableToday: true,
-    },
-    {
-      id: "doc-5",
-      name: "Dr. Priya Sharma, DM",
-      departmentId: "dept-neu",
-      departmentName: "Neurology",
-      specialization: "Neurologist & Epilepsy Consultant",
-      roomNumber: "Room 302",
-      consultationFee: 900,
-      availableDays: ["Tuesday", "Thursday", "Friday"],
-      isAvailableToday: true,
-    },
-    {
-      id: "doc-6",
-      name: "Dr. David Vance, MD",
-      departmentId: "dept-emg",
-      departmentName: "Emergency & Trauma",
-      specialization: "Emergency Medicine Director",
-      roomNumber: "ER Bay 1",
-      consultationFee: 0,
-      availableDays: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      isAvailableToday: true,
-    },
-  ],
+  hospitals: INITIAL_HOSPITALS,
+  departments: INITIAL_DEPARTMENTS,
+  doctors: INITIAL_DOCTORS,
+  bills: INITIAL_BILLS,
+  procedures: INITIAL_PROCEDURES,
+  aiSuggestions: [],
+  notifications: [],
+
+
   profiles: [
     {
       id: "usr-admin",
@@ -510,6 +411,73 @@ function acquireQueueLock<T>(fn: () => Promise<T>): Promise<T> {
 
 let inMemoryState: DatabaseState | null = null;
 
+function sanitizeLoadedState(parsed: any): DatabaseState {
+  if (!parsed) return INITIAL_STATE;
+
+  const primaryHospId = "hosp-queueless-blr";
+
+  // Ensure hospitals exist and include all 10 verified hospitals
+  if (!Array.isArray(parsed.hospitals) || parsed.hospitals.length < INITIAL_HOSPITALS.length) {
+    const existingHospMap = new Map((parsed.hospitals || []).map((h: any) => [h.id, h]));
+    parsed.hospitals = INITIAL_HOSPITALS.map((initH) => existingHospMap.get(initH.id) || initH);
+  }
+
+  // Ensure departments include all 20 departments from INITIAL_DEPARTMENTS with standardized naming
+  const existingDeptMap = new Map((parsed.departments || []).map((d: any) => [d.id, d]));
+  parsed.departments = INITIAL_DEPARTMENTS.map((initD) => {
+    const existing = existingDeptMap.get(initD.id);
+    return existing ? { ...initD, ...existing, name: initD.name, code: initD.code } : initD;
+  });
+
+  // Ensure doctors include all 80 doctors from INITIAL_DOCTORS with synchronized department names
+  const existingDocMap = new Map((parsed.doctors || []).map((d: any) => [d.id, d]));
+  parsed.doctors = INITIAL_DOCTORS.map((initDoc) => {
+    const existing = existingDocMap.get(initDoc.id);
+    return existing ? { ...initDoc, ...existing, departmentName: initDoc.departmentName } : initDoc;
+  });
+
+  if (!Array.isArray(parsed.profiles)) parsed.profiles = INITIAL_STATE.profiles;
+  if (!Array.isArray(parsed.tokens)) parsed.tokens = [];
+  if (!Array.isArray(parsed.appointments)) parsed.appointments = [];
+  if (!Array.isArray(parsed.visits)) parsed.visits = [];
+  if (!Array.isArray(parsed.emergencyCases)) parsed.emergencyCases = [];
+  if (!Array.isArray(parsed.auditLogs)) parsed.auditLogs = [];
+  if (!Array.isArray(parsed.bills) || parsed.bills.length === 0) parsed.bills = INITIAL_STATE.bills;
+  if (!Array.isArray(parsed.procedures) || parsed.procedures.length === 0) parsed.procedures = INITIAL_STATE.procedures;
+  if (!Array.isArray(parsed.aiSuggestions)) parsed.aiSuggestions = [];
+  if (!Array.isArray(parsed.notifications)) parsed.notifications = [];
+
+  // Align bill aliases
+  parsed.bills.forEach((b: any) => {
+    b.totalAmount = b.totalPayable ?? b.totalAmount ?? 0;
+    b.status = b.paymentStatus ?? b.status ?? "PENDING";
+    b.currency = b.currency || "INR";
+  });
+
+  if (!parsed.settings) {
+    parsed.settings = INITIAL_STATE.settings;
+  } else {
+    parsed.settings.currencySymbol = "₹";
+    parsed.settings.defaultConsultationFeeInr = parsed.settings.defaultConsultationFeeInr || 1500;
+  }
+
+  // Ensure hospitalId on existing records if missing
+  parsed.tokens.forEach((t: any) => {
+    if (!t.hospitalId) t.hospitalId = primaryHospId;
+  });
+  parsed.visits.forEach((v: any) => {
+    if (!v.hospitalId) v.hospitalId = primaryHospId;
+  });
+  parsed.appointments.forEach((a: any) => {
+    if (!a.hospitalId) a.hospitalId = primaryHospId;
+  });
+  parsed.emergencyCases.forEach((e: any) => {
+    if (!e.hospitalId) e.hospitalId = primaryHospId;
+  });
+
+  return parsed as DatabaseState;
+}
+
 function readLocalDb(): DatabaseState {
   if (inMemoryState) {
     return inMemoryState;
@@ -517,20 +485,20 @@ function readLocalDb(): DatabaseState {
   try {
     if (fs.existsSync(DB_FILE)) {
       const raw = fs.readFileSync(DB_FILE, "utf-8");
-      const parsed = JSON.parse(raw) as DatabaseState;
+      const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.tokens)) {
-        inMemoryState = parsed;
-        return parsed;
+        inMemoryState = sanitizeLoadedState(parsed);
+        return inMemoryState;
       }
     }
 
     if (fs.existsSync(TMP_DB_FILE)) {
       try {
         const rawTmp = fs.readFileSync(TMP_DB_FILE, "utf-8");
-        const parsedTmp = JSON.parse(rawTmp) as DatabaseState;
+        const parsedTmp = JSON.parse(rawTmp);
         if (parsedTmp && Array.isArray(parsedTmp.tokens)) {
-          inMemoryState = parsedTmp;
-          return parsedTmp;
+          inMemoryState = sanitizeLoadedState(parsedTmp);
+          return inMemoryState;
         }
       } catch {
         // ignore
@@ -760,6 +728,61 @@ export const db = {
     return updated;
   },
 
+  // Hospitals (Multi-Hospital Directory across Bengaluru & Tumakuru)
+  async getHospitals(): Promise<Hospital[]> {
+    if (isSupabaseConfigured()) {
+      const client = getSupabaseServerClient();
+      if (client) {
+        try {
+          const { data, error } = await client.from("hospitals").select("*");
+          if (!error && data && data.length > 0) {
+            return data.map((h: any) => ({
+              id: String(h.id),
+              name: h.name,
+              code: h.code,
+              tagline: h.tagline,
+              district: h.district,
+              city: h.city,
+              locality: h.locality,
+              address: h.address,
+              contactPhone: h.contact_phone,
+              emergencyHotline: h.emergency_hotline,
+              website: h.website,
+              email: h.email,
+              isPrimary: Boolean(h.is_primary),
+              verificationStatus: h.verification_status || "VERIFIED",
+              verificationSource: h.verification_source,
+              activeDepartmentsCount: Number(h.active_departments_count) || 20,
+              totalDoctorsCount: Number(h.total_doctors_count) || 80,
+              createdAt: h.created_at || new Date().toISOString(),
+              updatedAt: h.updated_at || new Date().toISOString(),
+            }));
+          }
+        } catch {
+          // ignore, fallback to local
+        }
+      }
+    }
+    return readLocalDb().hospitals;
+  },
+
+  async getHospitalById(id: string): Promise<Hospital | null> {
+    const hospitals = await db.getHospitals();
+    return (
+      hospitals.find(
+        (h) => h.id === id || h.code.toLowerCase() === id.toLowerCase()
+      ) || null
+    );
+  },
+
+  async createHospital(hospital: Hospital): Promise<Hospital> {
+    if (!hospital.id) hospital.id = randomUUID();
+    const local = readLocalDb();
+    local.hospitals.push(hospital);
+    writeLocalDb(local);
+    return hospital;
+  },
+
   // Departments
   async getDepartments(): Promise<Department[]> {
     if (isSupabaseConfigured()) {
@@ -772,29 +795,20 @@ export const db = {
           } else if (data && data.length > 0) {
             return data.map((d: any) => ({
               id: String(d.id),
+              hospitalId: d.hospital_id || "hosp-queueless-blr",
               name: d.name,
               code: d.code,
               floor: d.floor,
               description: d.description,
               avgConsultationMinutes: d.avg_consultation_minutes || 12,
-              activeDoctorsCount: d.active_doctors_count || 1,
+              activeDoctorsCount: d.active_doctors_count || 4,
               iconName: d.icon_name || "Activity",
+              imageUrl: d.image_url,
+              roomNumbers: d.room_numbers,
+              standardFee: d.standard_fee ? Number(d.standard_fee) : 1500,
+              headDoctorName: d.head_doctor_name,
+              active: d.active !== undefined ? Boolean(d.active) : true,
             }));
-          } else {
-            // Seed departments if Supabase is empty
-            const localDepts = readLocalDb().departments;
-            for (const d of localDepts) {
-              await client.from("departments").insert({
-                id: d.id,
-                name: d.name,
-                code: d.code,
-                floor: d.floor,
-                description: d.description,
-                avg_consultation_minutes: d.avgConsultationMinutes,
-                active_doctors_count: d.activeDoctorsCount,
-                icon_name: d.iconName,
-              });
-            }
           }
         } catch (err) {
           console.error("[Supabase Sync] getDepartments exception:", (err as Error).message);
@@ -813,6 +827,14 @@ export const db = {
     );
   },
 
+  async createDepartment(dept: Department): Promise<Department> {
+    if (!dept.id) dept.id = randomUUID();
+    const local = readLocalDb();
+    local.departments.push(dept);
+    writeLocalDb(local);
+    return dept;
+  },
+
   // Doctors
   async getDoctors(): Promise<Doctor[]> {
     if (isSupabaseConfigured()) {
@@ -825,32 +847,22 @@ export const db = {
           } else if (data && data.length > 0) {
             return data.map((d: any) => ({
               id: String(d.id),
+              hospitalId: d.hospital_id || "hosp-queueless-blr",
               name: d.name,
               departmentId: String(d.department_id),
               departmentName: d.department_name,
               specialization: d.specialization,
+              qualifications: d.qualifications,
+              experienceYears: d.experience_years ? Number(d.experience_years) : undefined,
               roomNumber: d.room_number,
-              consultationFee: Number(d.consultation_fee) || 500,
+              consultationFee: Number(d.consultation_fee) || 1500,
               availableDays: d.available_days || [],
               isAvailableToday: Boolean(d.is_available_today),
+              appointmentCapacityPerDay: d.appointment_capacity_per_day ? Number(d.appointment_capacity_per_day) : 40,
+              status: (d.status as "ACTIVE" | "INACTIVE") || "ACTIVE",
+              isDemo: Boolean(d.is_demo),
               avatarUrl: d.avatar_url,
             }));
-          } else {
-            // Seed doctors if Supabase is empty
-            const localDocs = readLocalDb().doctors;
-            for (const doc of localDocs) {
-              await client.from("doctors").insert({
-                id: doc.id,
-                name: doc.name,
-                department_id: doc.departmentId,
-                department_name: doc.departmentName,
-                specialization: doc.specialization,
-                room_number: doc.roomNumber,
-                consultation_fee: doc.consultationFee,
-                available_days: doc.availableDays,
-                is_available_today: doc.isAvailableToday,
-              });
-            }
           }
         } catch (err) {
           console.error("[Supabase Sync] getDoctors exception:", (err as Error).message);
@@ -863,6 +875,69 @@ export const db = {
   async getDoctorById(id: string): Promise<Doctor | null> {
     const doctors = await db.getDoctors();
     return doctors.find((d) => d.id === id) || null;
+  },
+
+  async createDoctor(doctor: Doctor): Promise<Doctor> {
+    if (!doctor.id) doctor.id = randomUUID();
+    const local = readLocalDb();
+
+    const targetHospitalId = doctor.hospitalId || "hosp-queueless-blr";
+    const normalizedName = doctor.name.trim().toLowerCase();
+
+    // Normalized case-insensitive unique display name check within hospital
+    const duplicate = local.doctors.find(
+      (d) =>
+        (d.hospitalId || "hosp-queueless-blr") === targetHospitalId &&
+        d.name.trim().toLowerCase() === normalizedName
+    );
+    if (duplicate) {
+      throw new Error(`Doctor with name "${doctor.name}" already exists in this hospital.`);
+    }
+
+    // Server-side validate consultation fee in INR (₹1,000 - ₹3,000)
+    let fee = Number(doctor.consultationFee);
+    if (isNaN(fee) || fee < 1000 || fee > 3000) {
+      fee = Math.max(1000, Math.min(3000, isNaN(fee) ? 1500 : fee));
+    }
+    doctor.consultationFee = fee;
+    doctor.hospitalId = targetHospitalId;
+    doctor.status = doctor.status || "ACTIVE";
+
+    local.doctors.push(doctor);
+    writeLocalDb(local);
+    return doctor;
+  },
+
+  async updateDoctor(id: string, updates: Partial<Doctor>): Promise<Doctor | null> {
+    const local = readLocalDb();
+    const idx = local.doctors.findIndex((d) => d.id === id);
+    if (idx === -1) return null;
+
+    if (updates.name) {
+      const normalizedName = updates.name.trim().toLowerCase();
+      const targetHospitalId = updates.hospitalId || local.doctors[idx].hospitalId || "hosp-queueless-blr";
+      const duplicate = local.doctors.find(
+        (d) =>
+          d.id !== id &&
+          (d.hospitalId || "hosp-queueless-blr") === targetHospitalId &&
+          d.name.trim().toLowerCase() === normalizedName
+      );
+      if (duplicate) {
+        throw new Error(`Doctor with name "${updates.name}" already exists in this hospital.`);
+      }
+    }
+
+    if (updates.consultationFee !== undefined) {
+      let fee = Number(updates.consultationFee);
+      if (isNaN(fee) || fee < 1000 || fee > 3000) {
+        fee = Math.max(1000, Math.min(3000, isNaN(fee) ? 1500 : fee));
+      }
+      updates.consultationFee = fee;
+    }
+
+    local.doctors[idx] = { ...local.doctors[idx], ...updates };
+    writeLocalDb(local);
+    return local.doctors[idx];
   },
 
   // Tokens (Queue Management)
@@ -1205,6 +1280,24 @@ export const db = {
         }
       }
 
+      // Automatically trigger in-app notification for patient
+      if (candidate.patientId) {
+        local.notifications.unshift({
+          id: randomUUID(),
+          recipientId: candidate.patientId,
+          recipientRole: "patient",
+          hospitalId: candidate.hospitalId || "hosp-queueless-blr",
+          title: `Token ${candidate.tokenNumber} Called!`,
+          message: `Your token ${candidate.tokenNumber} has been called for consultation with ${assignedDoctorName || "the doctor"} at ${assignedRoom || "Room 101"}. Please proceed inside.`,
+          type: "TOKEN_CALLED",
+          relatedEntityId: candidate.id,
+          relatedEntityType: "TOKEN",
+          isRead: false,
+          priority: "URGENT",
+          createdAt: now,
+        });
+      }
+
       writeLocalDb(local);
 
       if (isSupabaseConfigured()) {
@@ -1275,8 +1368,73 @@ export const db = {
     if (!appointment.id) {
       appointment.id = randomUUID();
     }
+    appointment.status = appointment.status || "CONFIRMED";
     const local = readLocalDb();
+
+    // 1. Verify doctor availability
+    const doctor = local.doctors.find((d) => d.id === appointment.doctorId);
+    if (doctor && doctor.status === "INACTIVE") {
+      throw new Error(`Dr. ${doctor.name} is currently inactive and not accepting new appointments.`);
+    }
+
+    // 2. Prevent double-booking for the exact same doctor, date, and timeslot
+    const normalizedSlot = appointment.timeSlot.trim().toLowerCase();
+    const existingConflict = local.appointments.find(
+      (a) =>
+        a.doctorId === appointment.doctorId &&
+        a.date === appointment.date &&
+        a.timeSlot.trim().toLowerCase() === normalizedSlot &&
+        (a.status === "CONFIRMED" || a.status === "CHECKED_IN")
+    );
+    if (existingConflict) {
+      throw new Error(
+        `Appointment slot conflict: Dr. ${appointment.doctorName} is already booked on ${appointment.date} at ${appointment.timeSlot}. Please select a different time slot.`
+      );
+    }
+
+    // 3. Fair load-aware capacity check
+    const bookedToday = local.appointments.filter(
+      (a) =>
+        a.doctorId === appointment.doctorId &&
+        a.date === appointment.date &&
+        (a.status === "CONFIRMED" || a.status === "CHECKED_IN")
+    ).length;
+    const maxCapacity = doctor?.appointmentCapacityPerDay || 40;
+    if (bookedToday >= maxCapacity) {
+      throw new Error(
+        `Dr. ${appointment.doctorName} has reached their daily booking capacity limit (${maxCapacity} patients) for ${appointment.date}. Please pick another date or consult another available specialist.`
+      );
+    }
+
+    // 4. Server-validated consultation fee
+    if (doctor?.consultationFee) {
+      appointment.consultationFee = doctor.consultationFee;
+    }
+
+    if (!appointment.hospitalId) {
+      appointment.hospitalId = doctor?.hospitalId || "hosp-queueless-blr";
+    }
+
     local.appointments.unshift(appointment);
+
+    // In-app notification for patient
+    if (appointment.patientId) {
+      local.notifications.unshift({
+        id: randomUUID(),
+        recipientId: appointment.patientId,
+        recipientRole: "patient",
+        hospitalId: appointment.hospitalId,
+        title: "Appointment Confirmed",
+        message: `Your appointment with Dr. ${appointment.doctorName} (${appointment.departmentName}) is confirmed for ${appointment.date} at ${appointment.timeSlot}.`,
+        type: "APPOINTMENT_REMINDER",
+        relatedEntityId: appointment.id,
+        relatedEntityType: "APPOINTMENT",
+        isRead: false,
+        priority: "NORMAL",
+        createdAt: new Date().toISOString(),
+      });
+    }
+
     writeLocalDb(local);
 
     if (isSupabaseConfigured()) {
@@ -1466,6 +1624,23 @@ export const db = {
     }
     const local = readLocalDb();
     local.emergencyCases.unshift(caseData);
+
+    // In-app emergency alert for all clinical staff
+    local.notifications.unshift({
+      id: randomUUID(),
+      recipientId: "all-clinical-staff",
+      recipientRole: "staff",
+      hospitalId: caseData.hospitalId || "hosp-queueless-blr",
+      title: `🚨 Emergency Intake: ${caseData.patientName}`,
+      message: `Severity: ${caseData.triageLevel}. Assigned Bay: ${caseData.assignedBay}. Chief complaint: ${caseData.chiefComplaint}`,
+      type: "EMERGENCY_ALERT",
+      relatedEntityId: caseData.id,
+      relatedEntityType: "EMERGENCY",
+      isRead: false,
+      priority: "URGENT",
+      createdAt: caseData.registeredAt,
+    });
+
     writeLocalDb(local);
 
     if (isSupabaseConfigured()) {
@@ -1495,6 +1670,365 @@ export const db = {
       }
     }
     return caseData;
+  },
+
+  // ---------------------------------------------------------------------------
+  // Comprehensive Itemized Billing System (in INR ₹)
+  // ---------------------------------------------------------------------------
+  async getBills(filters?: { patientId?: string; hospitalId?: string; visitId?: string }): Promise<Bill[]> {
+    const local = readLocalDb();
+    let result = local.bills;
+    if (filters?.patientId) {
+      result = result.filter((b) => b.patientId === filters.patientId);
+    }
+    if (filters?.hospitalId) {
+      result = result.filter((b) => b.hospitalId === filters.hospitalId);
+    }
+    if (filters?.visitId) {
+      result = result.filter((b) => b.visitId === filters.visitId);
+    }
+    return result;
+  },
+
+  async getBillById(id: string): Promise<Bill | null> {
+    const bills = await db.getBills();
+    return bills.find((b) => b.id === id || b.billNumber.toLowerCase() === id.toLowerCase()) || null;
+  },
+
+  async createBill(
+    billData: Partial<Bill> & {
+      patientId: string;
+      patientName: string;
+      uhid: string;
+      items: BillItem[];
+    }
+  ): Promise<Bill> {
+    const local = readLocalDb();
+    const id = billData.id || randomUUID();
+    const billNumber =
+      billData.billNumber ||
+      `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const now = new Date().toISOString();
+
+    // Server-side recalculation of item line totals
+    const validatedItems: BillItem[] = (billData.items || []).map((item, idx) => {
+      const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
+      const price = Math.max(0, Math.round((Number(item.unitPrice) || 0) * 100) / 100);
+      return {
+        id: item.id || `bi-${idx + 1}-${randomUUID().slice(0, 6)}`,
+        billId: id,
+        category: item.category || "OTHER",
+        itemDescription: item.itemDescription,
+        itemCode: item.itemCode,
+        quantity: qty,
+        unitPrice: price,
+        totalPrice: Math.round(qty * price * 100) / 100,
+      };
+    });
+
+    const subtotal = Math.round(validatedItems.reduce((acc, it) => acc + it.totalPrice, 0) * 100) / 100;
+    const rawDiscount = Math.max(0, Math.round((Number(billData.discountAmount) || 0) * 100) / 100);
+    const discountAmount = Math.min(subtotal, rawDiscount);
+    const taxAmount = Math.max(0, Math.round((Number(billData.taxAmount) || 0) * 100) / 100);
+    const totalPayable = Math.round((subtotal - discountAmount + taxAmount) * 100) / 100;
+    const amountPaid = Math.max(0, Math.round((Number(billData.amountPaid) || 0) * 100) / 100);
+    const balanceDue = Math.max(0, Math.round((totalPayable - amountPaid) * 100) / 100);
+
+    let paymentStatus: Bill["paymentStatus"] = "PENDING";
+    if (balanceDue === 0 && totalPayable > 0) {
+      paymentStatus = "PAID";
+    } else if (amountPaid > 0 && balanceDue > 0) {
+      paymentStatus = "PARTIAL";
+    }
+
+    const newBill: Bill = {
+      id,
+      billNumber,
+      hospitalId: billData.hospitalId || "hosp-queueless-blr",
+      hospitalName: billData.hospitalName || "QueueLess AI Smart Hospital",
+      hospitalAddress:
+        billData.hospitalAddress ||
+        "450 9th Main Road, Jayanagar 4th Block, Bengaluru, Karnataka 560011",
+      patientId: billData.patientId,
+      patientName: billData.patientName,
+      uhid: billData.uhid,
+      visitId: billData.visitId,
+      visitNumber: billData.visitNumber,
+      tokenId: billData.tokenId,
+      tokenNumber: billData.tokenNumber,
+      departmentName: billData.departmentName || "General Medicine",
+      attendingDoctorName: billData.attendingDoctorName || "Attending Physician",
+      billDate: billData.billDate || now.split("T")[0],
+      items: validatedItems,
+      subtotal,
+      discountAmount,
+      discountReason: billData.discountReason,
+      authorizedBy: billData.authorizedBy,
+      taxAmount,
+      totalPayable,
+      totalAmount: totalPayable,
+      amountPaid,
+      balanceDue,
+      currency: "INR",
+      paymentStatus: billData.paymentStatus || paymentStatus,
+      status: billData.paymentStatus || paymentStatus,
+      paymentMethod: billData.paymentMethod,
+      paymentReference: billData.paymentReference,
+      paidAt: billData.paidAt || (paymentStatus === "PAID" ? now : undefined),
+      isImmutable: Boolean(billData.isImmutable),
+      adjustmentNotes: billData.adjustmentNotes,
+      createdAt: billData.createdAt || now,
+      updatedAt: now,
+    };
+
+    local.bills.unshift(newBill);
+
+    // In-app notification for patient
+    if (newBill.patientId) {
+      local.notifications.unshift({
+        id: randomUUID(),
+        recipientId: newBill.patientId,
+        recipientRole: "patient",
+        hospitalId: newBill.hospitalId,
+        title: `Medical Bill Generated (${newBill.billNumber})`,
+        message: `Encounter invoice of ₹${newBill.totalPayable.toLocaleString(
+          "en-IN"
+        )} is ready. Balance due: ₹${newBill.balanceDue.toLocaleString("en-IN")}.`,
+        type: "BILL_GENERATED",
+        relatedEntityId: newBill.id,
+        relatedEntityType: "BILL",
+        isRead: false,
+        priority: "NORMAL",
+        createdAt: now,
+      });
+    }
+
+    writeLocalDb(local);
+    return newBill;
+  },
+
+  async recordBillPayment(
+    billId: string,
+    payment:
+      | number
+      | {
+          amount: number;
+          paymentMethod?: "CASH" | "UPI" | "CARD" | "INSURANCE" | "NET_BANKING";
+          paymentReference?: string;
+          notes?: string;
+        }
+  ): Promise<Bill> {
+    const paymentAmount = typeof payment === "number" ? payment : payment.amount;
+    const paymentMethod = typeof payment === "number" ? "CASH" : (payment.paymentMethod || "CASH");
+    const paymentReference = typeof payment === "number" ? undefined : payment.paymentReference;
+    const paymentNotes = typeof payment === "number" ? undefined : payment.notes;
+
+    const local = readLocalDb();
+    const billIndex = local.bills.findIndex((b) => b.id === billId || b.billNumber === billId);
+    if (billIndex === -1) {
+      throw new Error(`Bill not found with ID ${billId}`);
+    }
+    const bill = local.bills[billIndex];
+    const newAmountPaid = Math.round(((bill.amountPaid || 0) + paymentAmount) * 100) / 100;
+    const totalDue = bill.totalPayable ?? (bill as any).totalAmount ?? 0;
+    const newBalance = Math.max(0, Math.round((totalDue - newAmountPaid) * 100) / 100);
+
+    bill.amountPaid = newAmountPaid;
+    bill.balanceDue = newBalance;
+    bill.paymentMethod = paymentMethod;
+    if (paymentReference) bill.paymentReference = paymentReference;
+    bill.paymentStatus = newBalance === 0 ? "PAID" : "PARTIAL";
+    (bill as any).status = bill.paymentStatus;
+    (bill as any).totalAmount = totalDue;
+    bill.paidAt = new Date().toISOString();
+    bill.updatedAt = new Date().toISOString();
+    if (paymentNotes) {
+      bill.adjustmentNotes = (bill.adjustmentNotes ? bill.adjustmentNotes + "; " : "") + paymentNotes;
+    }
+
+    writeLocalDb(local);
+    return bill;
+  },
+
+  // ---------------------------------------------------------------------------
+  // Surgical & Procedure Records
+  // ---------------------------------------------------------------------------
+  async getProcedures(filters?: {
+    patientId?: string;
+    hospitalId?: string;
+    visitId?: string;
+    surgeonId?: string;
+  }): Promise<ProcedureRecord[]> {
+    const local = readLocalDb();
+    let result = local.procedures;
+    if (filters?.patientId) result = result.filter((p) => p.patientId === filters.patientId);
+    if (filters?.hospitalId) result = result.filter((p) => p.hospitalId === filters.hospitalId);
+    if (filters?.visitId) result = result.filter((p) => p.visitId === filters.visitId);
+    if (filters?.surgeonId) result = result.filter((p) => p.surgeonId === filters.surgeonId);
+    return result;
+  },
+
+  async getProcedureById(id: string): Promise<ProcedureRecord | null> {
+    const procs = await db.getProcedures();
+    return procs.find((p) => p.id === id || p.procedureNumber.toLowerCase() === id.toLowerCase()) || null;
+  },
+
+  async createProcedure(
+    procData: Partial<ProcedureRecord> & {
+      patientId: string;
+      patientName: string;
+      uhid: string;
+      procedureName: string;
+      leadSurgeonName: string;
+      departmentName: string;
+      operatingRoom: string;
+    }
+  ): Promise<ProcedureRecord> {
+    const local = readLocalDb();
+    const id = procData.id || randomUUID();
+    const procedureNumber =
+      procData.procedureNumber ||
+      `PRC-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    const now = new Date().toISOString();
+
+    const newProc: ProcedureRecord = {
+      id,
+      procedureNumber,
+      hospitalId: procData.hospitalId || "hosp-queueless-blr",
+      patientId: procData.patientId,
+      patientName: procData.patientName,
+      uhid: procData.uhid,
+      visitId: procData.visitId,
+      procedureName: procData.procedureName,
+      procedureCode: procData.procedureCode || "CPT-GEN",
+      indication: procData.indication || "Clinical indication documented",
+      preoperativeAssessment: procData.preoperativeAssessment || "Pre-op checklist verified, ASA grade noted",
+      consentObtained: Boolean(procData.consentObtained),
+      consentDocumentRef: procData.consentDocumentRef,
+      leadSurgeonName: procData.leadSurgeonName,
+      surgeonId: procData.surgeonId,
+      surgicalTeam: procData.surgicalTeam || [procData.leadSurgeonName],
+      departmentName: procData.departmentName,
+      operatingRoom: procData.operatingRoom,
+      procedureDate: procData.procedureDate || now.split("T")[0],
+      startTime: procData.startTime || "10:00",
+      endTime: procData.endTime || "11:00",
+      anesthesiaType: procData.anesthesiaType || "LOCAL",
+      anesthesiologistName: procData.anesthesiologistName,
+      operativeFindings: procData.operativeFindings || "Operative findings documented by surgeon",
+      procedureNotes: procData.procedureNotes || "Standard procedure executed without deviation",
+      complications: procData.complications || "None reported",
+      postoperativeCondition: procData.postoperativeCondition || "Stable in recovery room",
+      carePlan: procData.carePlan || "Post-op analgesia, wound monitoring",
+      followUpInstructions: procData.followUpInstructions || "Follow up in 7 days for inspection",
+      status: procData.status || "COMPLETED",
+      isVerified: Boolean(procData.isVerified),
+      verifiedByDoctorId: procData.verifiedByDoctorId,
+      verifiedByDoctorName: procData.verifiedByDoctorName,
+      verifiedAt: procData.verifiedAt,
+      relatedBillId: procData.relatedBillId,
+      procedureFee: Number(procData.procedureFee) || 1500,
+      createdAt: procData.createdAt || now,
+      updatedAt: now,
+    };
+
+    local.procedures.unshift(newProc);
+    writeLocalDb(local);
+    return newProc;
+  },
+
+  async verifyProcedure(id: string, doctorId: string, doctorName: string): Promise<ProcedureRecord> {
+    const local = readLocalDb();
+    const idx = local.procedures.findIndex((p) => p.id === id || p.procedureNumber === id);
+    if (idx === -1) throw new Error(`Procedure ${id} not found`);
+    const now = new Date().toISOString();
+    local.procedures[idx].isVerified = true;
+    local.procedures[idx].status = "VERIFIED";
+    local.procedures[idx].verifiedByDoctorId = doctorId;
+    local.procedures[idx].verifiedByDoctorName = doctorName;
+    local.procedures[idx].verifiedAt = now;
+    local.procedures[idx].updatedAt = now;
+    writeLocalDb(local);
+    return local.procedures[idx];
+  },
+
+  // ---------------------------------------------------------------------------
+  // AI-Assisted Clinical Support (Clinician-in-the-Loop)
+  // ---------------------------------------------------------------------------
+  async getAiClinicalSuggestions(filters?: {
+    visitId?: string;
+    patientId?: string;
+    doctorId?: string;
+  }): Promise<AiClinicalSuggestion[]> {
+    const local = readLocalDb();
+    let result = local.aiSuggestions;
+    if (filters?.visitId) result = result.filter((s) => s.visitId === filters.visitId);
+    if (filters?.patientId) result = result.filter((s) => s.patientId === filters.patientId);
+    if (filters?.doctorId) result = result.filter((s) => s.doctorId === filters.doctorId);
+    return result;
+  },
+
+  async getAiClinicalSuggestionById(id: string): Promise<AiClinicalSuggestion | null> {
+    const local = readLocalDb();
+    return local.aiSuggestions.find((s) => s.id === id) || null;
+  },
+
+  async createAiClinicalSuggestion(suggestion: AiClinicalSuggestion): Promise<AiClinicalSuggestion> {
+    if (!suggestion.id) suggestion.id = randomUUID();
+    const local = readLocalDb();
+    local.aiSuggestions.unshift(suggestion);
+    writeLocalDb(local);
+    return suggestion;
+  },
+
+  async updateAiClinicalSuggestionStatus(
+    id: string,
+    status: AiClinicalSuggestion["status"],
+    clinicianEdits?: string,
+    approvedByDoctorName?: string
+  ): Promise<AiClinicalSuggestion | null> {
+    const local = readLocalDb();
+    const idx = local.aiSuggestions.findIndex((s) => s.id === id);
+    if (idx === -1) return null;
+    local.aiSuggestions[idx].status = status;
+    if (clinicianEdits !== undefined) local.aiSuggestions[idx].clinicianEdits = clinicianEdits;
+    if (approvedByDoctorName) local.aiSuggestions[idx].approvedByDoctorName = approvedByDoctorName;
+    if (status === "CLINICIAN_APPROVED") local.aiSuggestions[idx].approvedAt = new Date().toISOString();
+    writeLocalDb(local);
+    return local.aiSuggestions[idx];
+  },
+
+  // ---------------------------------------------------------------------------
+  // In-App Notification System
+  // ---------------------------------------------------------------------------
+  async getNotifications(userId: string, role?: UserRole): Promise<AppNotification[]> {
+    const local = readLocalDb();
+    return local.notifications.filter(
+      (n) =>
+        n.recipientId === userId ||
+        (n.recipientRole === role && n.recipientId === "all-clinical-staff")
+    );
+  },
+
+  async createNotification(notification: AppNotification): Promise<AppNotification> {
+    if (!notification.id) notification.id = randomUUID();
+    const local = readLocalDb();
+    local.notifications.unshift(notification);
+    if (local.notifications.length > 500) {
+      local.notifications = local.notifications.slice(0, 500);
+    }
+    writeLocalDb(local);
+    return notification;
+  },
+
+  async markNotificationAsRead(id: string): Promise<AppNotification | null> {
+    const local = readLocalDb();
+    const idx = local.notifications.findIndex((n) => n.id === id);
+    if (idx === -1) return null;
+    local.notifications[idx].isRead = true;
+    local.notifications[idx].readAt = new Date().toISOString();
+    writeLocalDb(local);
+    return local.notifications[idx];
   },
 
   // Audit Logs

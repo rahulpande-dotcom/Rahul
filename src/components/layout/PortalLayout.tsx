@@ -33,6 +33,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { playHospitalChime } from "@/lib/sound";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface PortalLayoutProps {
   role: UserRole;
@@ -90,6 +91,7 @@ export function PortalLayout({ role, user, children }: PortalLayoutProps) {
         { label: "Hospital Staff", href: "/admin/staff", icon: UserCheck },
         { label: "Doctors & OPD", href: "/admin/doctors", icon: Stethoscope },
         { label: "Departments", href: "/admin/departments", icon: Building2 },
+        { label: "Hospitals Network", href: "/hospitals", icon: Building2, badge: "BLR/TMK" },
         { label: "Appointments", href: "/admin/appointments", icon: Calendar },
         { label: "Live Token Queue", href: "/admin/tokens", icon: Ticket },
         { label: "Clinical Visits", href: "/admin/visits", icon: ClipboardList },
@@ -122,6 +124,7 @@ export function PortalLayout({ role, user, children }: PortalLayoutProps) {
       { label: "Appointments", href: "/patient/appointments", icon: Calendar },
       { label: "Medical History", href: "/patient/medical-history", icon: ClipboardList },
       { label: "My Reports (PDF)", href: "/patient/my-reports", icon: FileText },
+      { label: "Bills & Invoices", href: "/patient/bills", icon: FileText, badge: "INR" },
       { label: "My Profile", href: "/patient/profile", icon: Users },
       { label: "Security", href: "/patient/security", icon: Settings },
     ];
@@ -294,6 +297,7 @@ export function PortalLayout({ role, user, children }: PortalLayoutProps) {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationBell userId={activeUser?.id || "usr-patient"} role={role} />
             {/* Audio Chime Test Button */}
             <button
               onClick={() => playHospitalChime()}

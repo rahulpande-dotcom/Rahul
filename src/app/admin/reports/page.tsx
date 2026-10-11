@@ -18,8 +18,21 @@ export default async function AdminReportsPage() {
             Hospital Analytics & Operational Reports
           </h1>
           <p className="text-xs text-slate-500">
-            Queue efficiency benchmarks, clinical encounter logs, and PDF exports.
+            Queue efficiency benchmarks, clinical encounter logs, and official executive PDF exports.
           </p>
+        </div>
+
+        <div>
+          <a
+            href="/api/reports/generate-pdf?type=operations"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button size="md" className="font-bold text-xs flex items-center gap-2 shadow-sm">
+              <Download className="w-4 h-4" />
+              Download Operations Report (PDF)
+            </Button>
+          </a>
         </div>
       </div>
 

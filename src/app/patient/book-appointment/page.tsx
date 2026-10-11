@@ -220,10 +220,31 @@ export default function BookAppointmentPage() {
                   >
                     {filteredDoctors.map((doc) => (
                       <option key={doc.id} value={doc.id}>
-                        {doc.name} - {doc.specialization} ({doc.roomNumber})
+                        {doc.name} • {doc.specialization} ({doc.roomNumber}) — ₹{(doc.consultationFee || 1500).toLocaleString("en-IN")}
                       </option>
                     ))}
                   </select>
+
+                  {/* Selected Doctor Summary Card */}
+                  {(() => {
+                    const activeDoc = doctors.find((d) => d.id === selectedDoctorId);
+                    if (!activeDoc) return null;
+                    return (
+                      <div className="p-2.5 bg-blue-50/60 border border-blue-200 rounded-xl text-xs space-y-1 mt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-slate-800">
+                            {activeDoc.name} {activeDoc.qualifications ? `(${activeDoc.qualifications})` : ""}
+                          </span>
+                          <span className="font-extrabold text-emerald-700">
+                            Consultation Fee: ₹{(activeDoc.consultationFee || 1500).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          {activeDoc.specialization} • Suite: {activeDoc.roomNumber} • Experience: {activeDoc.experienceYears || 10}+ Years
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 

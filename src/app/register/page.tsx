@@ -40,6 +40,28 @@ export default function RegisterPage() {
 
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [rememberedAccounts, setRememberedAccounts] = useState<any[]>([]);
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [doctorSearch, setDoctorSearch] = useState("");
+
+  React.useEffect(() => {
+    // Device-only remembered accounts (never storing passwords/tokens)
+    try {
+      const raw = localStorage.getItem("queueless_remembered_accounts");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setRememberedAccounts(parsed);
+      }
+    } catch {}
+
+    // Load doctors for preview
+    fetch("/api/doctors")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setDoctorsList(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -87,6 +109,15 @@ export default function RegisterPage() {
         return;
       }
 
+      // Save device-only remembered account (never storing password or tokens)
+      try {
+        const updated = [
+          { name: formData.name, email: formData.email, role: "patient", lastLogin: new Date().toISOString() },
+          ...rememberedAccounts.filter((a) => a.email.toLowerCase() !== formData.email.toLowerCase()),
+        ].slice(0, 5);
+        localStorage.setItem("queueless_remembered_accounts", JSON.stringify(updated));
+      } catch {}
+
       window.location.href = "/patient/dashboard";
     } catch (err) {
       setErrorMessage("Network error occurred during registration. Please retry.");
@@ -112,6 +143,33 @@ export default function RegisterPage() {
               Create your permanent health profile to book digital tokens, check live queues, and download medical records.
             </p>
           </div>
+
+          {/* Remembered Accounts on this Device */}
+          {rememberedAccounts.length > 0 && (
+            <div className="bg-blue-50/70 border border-blue-200 rounded-2xl p-4 space-y-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-blue-800 block">
+                Remembered Accounts on this Device
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {rememberedAccounts.map((acc, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({ ...prev, email: acc.email, name: acc.name }));
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-blue-200 text-xs text-slate-800 hover:bg-blue-100 transition-colors shadow-2xs"
+                  >
+                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white font-bold text-[10px] flex items-center justify-center">
+                      {acc.name.charAt(0)}
+                    </div>
+                    <span className="font-semibold">{acc.name}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">({acc.email})</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Card className="shadow-lg border-slate-200">
             <CardContent className="p-6 space-y-5">
@@ -300,6 +358,67 @@ export default function RegisterPage() {
             <Link href="/login" className="font-bold text-blue-600 hover:underline">
               Sign In to Patient Portal →
             </Link>
+          </div>
+
+          {/* Searchable Doctor Directory Near Registration */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-blue-600" />
+                  Explore Hospital Doctors & OPD Fees (INR)
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Find our 80 active specialists across 20 departments before registering.
+                </p>
+              </div>
+              <Link
+                href="/departments"
+                className="text-xs font-bold text-blue-600 hover:underline shrink-0"
+              >
+                View 20 Departments →
+              </Link>
+            </div>
+
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search doctors by name or specialization..."
+                value={doctorSearch}
+                onChange={(e) => setDoctorSearch(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
+              />
+            </div>
+
+            <div className="max-h-56 overflow-y-auto divide-y divide-slate-100 text-xs">
+              {doctorsList
+                .filter(
+                  (d) =>
+                    !doctorSearch ||
+                    d.name.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+                    d.specialization.toLowerCase().includes(doctorSearch.toLowerCase()) ||
+                    d.departmentName.toLowerCase().includes(doctorSearch.toLowerCase())
+                )
+                .slice(0, 6)
+                .map((doc) => (
+                  <div key={doc.id} className="py-2.5 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="font-bold text-slate-900 block">
+                        {doc.name} {doc.qualifications ? `(${doc.qualifications})` : ""}
+                      </span>
+                      <span className="text-[11px] text-slate-500">
+                        {doc.departmentName} • {doc.specialization} • Room {doc.roomNumber}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-extrabold text-emerald-700 block">
+                        ₹{(doc.consultationFee || 1500).toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-[10px] text-slate-400">per visit</span>
+                    </div>
+                  </div>
+                ))}
+            </div>
           </div>
         </div>
       </main>
