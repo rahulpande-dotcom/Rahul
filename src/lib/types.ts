@@ -196,7 +196,11 @@ export interface Visit {
   billId?: string;
   procedureId?: string;
   status: "IN_PROGRESS" | "COMPLETED";
+  createdAt?: string;
+  updatedAt?: string;
 }
+
+export type ClinicalVisit = Visit;
 
 // -----------------------------------------------------------------------------
 // Comprehensive Itemized Billing System (in INR ₹)
@@ -207,6 +211,7 @@ export type BillingItemCategory =
   | "DIAGNOSTIC_LAB"
   | "IMAGING"
   | "PHARMACY_MEDICINE"
+  | "PHARMACY"
   | "PROCEDURE"
   | "SURGERY_OPERATION"
   | "ANESTHESIA"
@@ -218,7 +223,7 @@ export interface BillItem {
   id: string;
   billId: string;
   category: BillingItemCategory;
-  itemDescription: string;
+  itemDescription?: string;
   description?: string; // alias for itemDescription
   itemCode?: string;
   quantity: number;
@@ -283,7 +288,7 @@ export interface ProcedureRecord {
   consentDocumentRef?: string;
   leadSurgeonName: string;
   surgeonId?: string;
-  surgicalTeam: string[];
+  surgicalTeam?: string[];
   departmentName: string;
   operatingRoom: string;
   procedureDate: string;
@@ -296,6 +301,7 @@ export interface ProcedureRecord {
   complications: string;
   postoperativeCondition: string;
   carePlan: string;
+  postoperativePlan?: string; // alias for carePlan
   followUpInstructions: string;
   status: "SCHEDULED" | "IN_PROGRESS" | "COMPLETED" | "VERIFIED" | "CANCELLED";
   isVerified: boolean;
@@ -303,7 +309,7 @@ export interface ProcedureRecord {
   verifiedByDoctorName?: string;
   verifiedAt?: string;
   relatedBillId?: string;
-  procedureFee: number; // in INR ₹
+  procedureFee?: number; // in INR ₹
   createdAt: string;
   updatedAt: string;
 }

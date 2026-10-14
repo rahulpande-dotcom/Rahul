@@ -877,12 +877,15 @@ export const db = {
     return doctors.find((d) => d.id === id) || null;
   },
 
-  async createDoctor(doctor: Doctor): Promise<Doctor> {
-    if (!doctor.id) doctor.id = randomUUID();
+  async createDoctor(
+    doctorData: Partial<Doctor> & {
+      name: string;
+      departmentName?: string;
+    }
+  ): Promise<Doctor> {
     const local = readLocalDb();
-
-    const targetHospitalId = doctor.hospitalId || "hosp-queueless-blr";
-    const normalizedName = doctor.name.trim().toLowerCase();
+    const targetHospitalId = doctorData.hospitalId || "hosp-queueless-blr";
+    const normalizedName = doctorData.name.trim().toLowerCase();
 
     // Normalized case-insensitive unique display name check within hospital
     const duplicate = local.doctors.find(
@@ -891,17 +894,33 @@ export const db = {
         d.name.trim().toLowerCase() === normalizedName
     );
     if (duplicate) {
-      throw new Error(`Doctor with name "${doctor.name}" already exists in this hospital.`);
+      throw new Error(`Doctor with name "${doctorData.name.trim()}" already exists in this hospital.`);
     }
 
     // Server-side validate consultation fee in INR (₹1,000 - ₹3,000)
-    let fee = Number(doctor.consultationFee);
+    let fee = Number(doctorData.consultationFee);
     if (isNaN(fee) || fee < 1000 || fee > 3000) {
       fee = Math.max(1000, Math.min(3000, isNaN(fee) ? 1500 : fee));
     }
-    doctor.consultationFee = fee;
-    doctor.hospitalId = targetHospitalId;
-    doctor.status = doctor.status || "ACTIVE";
+
+    const doctor: Doctor = {
+      id: doctorData.id || randomUUID(),
+      hospitalId: targetHospitalId,
+      name: doctorData.name.trim(),
+      departmentId: doctorData.departmentId || "dept-1",
+      departmentName: doctorData.departmentName || "General Medicine",
+      specialization: doctorData.specialization || "General Physician",
+      qualifications: doctorData.qualifications || "MBBS",
+      experienceYears: doctorData.experienceYears || 5,
+      roomNumber: doctorData.roomNumber || "Room 101",
+      consultationFee: fee,
+      availableDays: doctorData.availableDays || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      isAvailableToday: doctorData.isAvailableToday !== undefined ? doctorData.isAvailableToday : true,
+      appointmentCapacityPerDay: doctorData.appointmentCapacityPerDay || 40,
+      status: doctorData.status || "ACTIVE",
+      isDemo: doctorData.isDemo !== undefined ? doctorData.isDemo : false,
+      avatarUrl: doctorData.avatarUrl,
+    };
 
     local.doctors.push(doctor);
     writeLocalDb(local);
@@ -1364,56 +1383,76 @@ export const db = {
     return readLocalDb().appointments;
   },
 
-  async createAppointment(appointment: Appointment): Promise<Appointment> {
-    if (!appointment.id) {
-      appointment.id = randomUUID();
+  async createAppointment(
+    appointmentData: Partial<Appointment> & {
+      patientId: string;
+      patientName: string;
+      doctorId: string;
+      doctorName: string;
+      date: string;
+      timeSlot: string;
+      reason?: string;
     }
-    appointment.status = appointment.status || "CONFIRMED";
+  ): Promise<Appointment> {
     const local = readLocalDb();
 
     // 1. Verify doctor availability
-    const doctor = local.doctors.find((d) => d.id === appointment.doctorId);
+    const doctor = local.doctors.find((d) => d.id === appointmentData.doctorId);
     if (doctor && doctor.status === "INACTIVE") {
       throw new Error(`Dr. ${doctor.name} is currently inactive and not accepting new appointments.`);
     }
 
     // 2. Prevent double-booking for the exact same doctor, date, and timeslot
-    const normalizedSlot = appointment.timeSlot.trim().toLowerCase();
+    const normalizedSlot = appointmentData.timeSlot.trim().toLowerCase();
     const existingConflict = local.appointments.find(
       (a) =>
-        a.doctorId === appointment.doctorId &&
-        a.date === appointment.date &&
+        a.doctorId === appointmentData.doctorId &&
+        a.date === appointmentData.date &&
         a.timeSlot.trim().toLowerCase() === normalizedSlot &&
         (a.status === "CONFIRMED" || a.status === "CHECKED_IN")
     );
     if (existingConflict) {
       throw new Error(
-        `Appointment slot conflict: Dr. ${appointment.doctorName} is already booked on ${appointment.date} at ${appointment.timeSlot}. Please select a different time slot.`
+        `Appointment slot conflict: Dr. ${appointmentData.doctorName} is already booked on ${appointmentData.date} at ${appointmentData.timeSlot}. Please select a different time slot.`
       );
     }
 
     // 3. Fair load-aware capacity check
     const bookedToday = local.appointments.filter(
       (a) =>
-        a.doctorId === appointment.doctorId &&
-        a.date === appointment.date &&
+        a.doctorId === appointmentData.doctorId &&
+        a.date === appointmentData.date &&
         (a.status === "CONFIRMED" || a.status === "CHECKED_IN")
     ).length;
     const maxCapacity = doctor?.appointmentCapacityPerDay || 40;
     if (bookedToday >= maxCapacity) {
       throw new Error(
-        `Dr. ${appointment.doctorName} has reached their daily booking capacity limit (${maxCapacity} patients) for ${appointment.date}. Please pick another date or consult another available specialist.`
+        `Dr. ${appointmentData.doctorName} has reached their daily booking capacity limit (${maxCapacity} patients) for ${appointmentData.date}. Please pick another date or consult another available specialist.`
       );
     }
 
-    // 4. Server-validated consultation fee
-    if (doctor?.consultationFee) {
-      appointment.consultationFee = doctor.consultationFee;
-    }
+    const consultationFee = appointmentData.consultationFee || doctor?.consultationFee || 1500;
+    const hospitalId = appointmentData.hospitalId || doctor?.hospitalId || "hosp-queueless-blr";
 
-    if (!appointment.hospitalId) {
-      appointment.hospitalId = doctor?.hospitalId || "hosp-queueless-blr";
-    }
+    const appointment: Appointment = {
+      id: appointmentData.id || randomUUID(),
+      patientId: appointmentData.patientId,
+      patientName: appointmentData.patientName,
+      patientPhone: appointmentData.patientPhone || "",
+      patientEmail: appointmentData.patientEmail || "",
+      doctorId: appointmentData.doctorId,
+      doctorName: appointmentData.doctorName,
+      departmentId: appointmentData.departmentId || doctor?.departmentId || "dept-1",
+      departmentName: appointmentData.departmentName || doctor?.departmentName || "General Medicine",
+      date: appointmentData.date,
+      timeSlot: appointmentData.timeSlot,
+      reason: appointmentData.reason || "General Consultation",
+      consultationFee,
+      status: appointmentData.status || "CONFIRMED",
+      tokenId: appointmentData.tokenId,
+      hospitalId,
+      createdAt: appointmentData.createdAt || new Date().toISOString(),
+    };
 
     local.appointments.unshift(appointment);
 
@@ -1699,7 +1738,7 @@ export const db = {
     billData: Partial<Bill> & {
       patientId: string;
       patientName: string;
-      uhid: string;
+      uhid?: string;
       items: BillItem[];
     }
   ): Promise<Bill> {
@@ -1710,15 +1749,22 @@ export const db = {
       `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const now = new Date().toISOString();
 
+    const targetPatient = billData.patientId
+      ? local.profiles.find((u: UserProfile) => u.id === billData.patientId)
+      : null;
+    const resolvedUhid = billData.uhid || targetPatient?.uhid || "QL-2026-8819";
+
     // Server-side recalculation of item line totals
     const validatedItems: BillItem[] = (billData.items || []).map((item, idx) => {
       const qty = Math.max(1, Math.floor(Number(item.quantity) || 1));
       const price = Math.max(0, Math.round((Number(item.unitPrice) || 0) * 100) / 100);
+      const desc = item.itemDescription || item.description || "Medical Service";
       return {
         id: item.id || `bi-${idx + 1}-${randomUUID().slice(0, 6)}`,
         billId: id,
         category: item.category || "OTHER",
-        itemDescription: item.itemDescription,
+        itemDescription: desc,
+        description: desc,
         itemCode: item.itemCode,
         quantity: qty,
         unitPrice: price,
@@ -1751,7 +1797,7 @@ export const db = {
         "450 9th Main Road, Jayanagar 4th Block, Bengaluru, Karnataka 560011",
       patientId: billData.patientId,
       patientName: billData.patientName,
-      uhid: billData.uhid,
+      uhid: resolvedUhid,
       visitId: billData.visitId,
       visitNumber: billData.visitNumber,
       tokenId: billData.tokenId,
@@ -1973,12 +2019,40 @@ export const db = {
     return local.aiSuggestions.find((s) => s.id === id) || null;
   },
 
-  async createAiClinicalSuggestion(suggestion: AiClinicalSuggestion): Promise<AiClinicalSuggestion> {
-    if (!suggestion.id) suggestion.id = randomUUID();
+  async createAiClinicalSuggestion(
+    suggestion: Partial<AiClinicalSuggestion> & {
+      patientId: string;
+      doctorId: string;
+    }
+  ): Promise<AiClinicalSuggestion> {
+    const fullSuggestion: AiClinicalSuggestion = {
+      id: suggestion.id || randomUUID(),
+      visitId: suggestion.visitId,
+      patientId: suggestion.patientId,
+      doctorId: suggestion.doctorId,
+      symptomsReported: suggestion.symptomsReported || "",
+      organizedSummary: suggestion.organizedSummary || "Clinical summary",
+      differentialDiagnoses: suggestion.differentialDiagnoses || suggestion.differentials || [],
+      differentials: suggestion.differentials || suggestion.differentialDiagnoses || [],
+      redFlagsDetected: suggestion.redFlagsDetected || suggestion.redFlags || [],
+      redFlags: suggestion.redFlags || suggestion.redFlagsDetected || [],
+      suggestedInvestigations: suggestion.suggestedInvestigations || [],
+      suggestedClinicalQuestions: suggestion.suggestedClinicalQuestions || suggestion.clinicalQuestions || [],
+      clinicalQuestions: suggestion.clinicalQuestions || suggestion.suggestedClinicalQuestions || [],
+      medicationSafetyChecks: suggestion.medicationSafetyChecks || [],
+      disclaimer:
+        suggestion.disclaimer ||
+        "QueueLess AI Clinical Assistant: AI-generated suggestions are strictly decision-support aids for qualified medical professionals. Final clinical decisions, diagnosis, and treatment plans rest solely with the attending licensed clinician.",
+      status: suggestion.status || "SUGGESTION_PENDING_REVIEW",
+      clinicianEdits: suggestion.clinicianEdits,
+      approvedByDoctorName: suggestion.approvedByDoctorName,
+      approvedAt: suggestion.approvedAt,
+      createdAt: suggestion.createdAt || new Date().toISOString(),
+    };
     const local = readLocalDb();
-    local.aiSuggestions.unshift(suggestion);
+    local.aiSuggestions.unshift(fullSuggestion);
     writeLocalDb(local);
-    return suggestion;
+    return fullSuggestion;
   },
 
   async updateAiClinicalSuggestionStatus(

@@ -124,7 +124,7 @@ describe("Official Hospital Medical Reports (7 PDF Generators)", () => {
     startTime: "09:30 AM",
     endTime: "10:45 AM",
     operatingRoom: "OT 3",
-    anesthesiaType: "Spinal Anesthesia",
+    anesthesiaType: "SPINAL",
     anesthesiologistName: "Dr. Arvind Rao, MD (Anesth)",
     indication: "Persistent joint effusion, mechanical catching of left knee",
     preoperativeAssessment: "ASA Grade I, informed surgical consent documented",
@@ -133,7 +133,12 @@ describe("Official Hospital Medical Reports (7 PDF Generators)", () => {
     procedureNotes: "Standard arthroscopic portals created. Synovial biopsy collected. Pressure dressing applied.",
     complications: "None observed. Minimal intra-articular blood loss (< 20 ml).",
     postoperativeCondition: "Stable, vitals within normal parameters",
+    carePlan: "Cryotherapy, crutch weight-bearing, analgesia",
     postoperativePlan: "Cryotherapy, crutch weight-bearing, analgesia",
+    followUpInstructions: "Follow up in 7 days for wound review and staple removal",
+    surgicalTeam: ["Dr. Vikram Seth, MS (Ortho)"],
+    status: "VERIFIED",
+    procedureFee: 4500,
     isVerified: true,
     verifiedByDoctorName: "Dr. Vikram Seth, MS (Ortho)",
     verifiedAt: new Date().toISOString(),
@@ -145,7 +150,7 @@ describe("Official Hospital Medical Reports (7 PDF Generators)", () => {
     expect(pdfBytes).toBeDefined();
     expect(pdfBytes.length).toBeGreaterThan(100);
     // PDF magic bytes: %PDF (0x25, 0x50, 0x44, 0x46)
-    const header = String.fromCharCode(...pdfBytes.slice(0, 4));
+    const header = String.fromCharCode(pdfBytes[0], pdfBytes[1], pdfBytes[2], pdfBytes[3]);
     expect(header).toBe("%PDF");
   }
 

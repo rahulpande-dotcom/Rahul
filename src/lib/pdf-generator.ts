@@ -1209,7 +1209,7 @@ export async function generateMedicalHistoryPdf(
 // -----------------------------------------------------------------------------
 // 7. Hospital Operations & Queue Administration Report
 // -----------------------------------------------------------------------------
-export async function generateHospitalOperationsReportPdf(stats: any): Promise<Uint8Array> {
+export async function generateHospitalOperationsReportPdf(stats: any, departments?: any): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 841.89]);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);

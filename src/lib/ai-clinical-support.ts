@@ -13,7 +13,31 @@ interface ClinicalAnalysisInput {
   visitId?: string;
 }
 
-export function generateClinicalAssistance(input: ClinicalAnalysisInput): Omit<AiClinicalSuggestion, "id" | "createdAt"> {
+export interface ClinicalAssistanceResult {
+  visitId?: string;
+  patientId: string;
+  doctorId: string;
+  symptomsReported: string;
+  organizedSummary: string;
+  differentialDiagnoses: AiDifferentialDiagnosis[];
+  differentials: AiDifferentialDiagnosis[];
+  redFlagsDetected: string[];
+  redFlags: string[];
+  suggestedInvestigations: string[];
+  suggestedClinicalQuestions: string[];
+  clinicalQuestions: string[];
+  medicationSafetyChecks: string[];
+  disclaimer: string;
+  status:
+    | "SUGGESTION_PENDING_REVIEW"
+    | "CLINICIAN_APPROVED"
+    | "CLINICIAN_EDITED"
+    | "DISMISSED"
+    | "PENDING"
+    | "APPROVED";
+}
+
+export function generateClinicalAssistance(input: ClinicalAnalysisInput): ClinicalAssistanceResult {
   const s = input.symptoms.toLowerCase();
   const differentials: AiDifferentialDiagnosis[] = [];
   const redFlags: string[] = [];
