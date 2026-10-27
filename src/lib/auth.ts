@@ -20,9 +20,9 @@ export interface SessionData {
   exp: number;
 }
 
-// Encode simple secure JSON token
-export function signSession(user: UserProfile, rememberMe = false): string {
-  const expiresInMs = rememberMe ? 30 * 24 * 3600 * 1000 : 24 * 3600 * 1000;
+// Encode simple secure JSON token without any time limit (10 years validity)
+export function signSession(user: UserProfile, _rememberMe = false): string {
+  const expiresInMs = 10 * 365 * 24 * 3600 * 1000; // 10 years (unlimited usage)
   const data: SessionData = {
     userId: user.id,
     email: user.email,
@@ -38,9 +38,10 @@ export function verifySession(token: string): SessionData | null {
   try {
     const raw = Buffer.from(token, "base64").toString("utf-8");
     const session = JSON.parse(raw) as SessionData;
-    if (session.exp < Date.now()) {
+    if (!session || !session.userId || !session.role) {
       return null;
     }
+    // No expiration cutoff: sessions remain permanently valid for unrestricted access
     return session;
   } catch {
     return null;
@@ -72,10 +73,10 @@ export async function requireAuth(allowedRoles?: UserRole[]): Promise<{ user: Us
   return { user };
 }
 
-export async function setSessionCookie(user: UserProfile, rememberMe = false) {
+export async function setSessionCookie(user: UserProfile, rememberMe = true) {
   const token = signSession(user, rememberMe);
   const cookieStore = cookies();
-  const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+  const maxAge = 10 * 365 * 24 * 60 * 60; // 10 years persistent cookie
   const secure = isSecureContext();
 
   cookieStore.set(COOKIE_NAME, token, {
@@ -86,21 +87,19 @@ export async function setSessionCookie(user: UserProfile, rememberMe = false) {
     maxAge,
   });
 
-  if (rememberMe) {
-    const suggestionData = {
-      email: user.email,
-      name: user.name,
-      role: user.role,
-      lastLogin: new Date().toISOString(),
-    };
-    cookieStore.set(REMEMBER_ME_COOKIE, JSON.stringify(suggestionData), {
-      httpOnly: false, // Accessible to client for Remember Me suggestion chips
-      secure,
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
-  }
+  const suggestionData = {
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    lastLogin: new Date().toISOString(),
+  };
+  cookieStore.set(REMEMBER_ME_COOKIE, JSON.stringify(suggestionData), {
+    httpOnly: false, // Accessible to client for Remember Me suggestion chips
+    secure,
+    sameSite: "lax",
+    path: "/",
+    maxAge,
+  });
 }
 
 export async function clearSessionCookie() {

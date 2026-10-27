@@ -65,9 +65,9 @@ export async function POST(req: NextRequest) {
       ipAddress: req.headers.get("x-forwarded-for") || "127.0.0.1",
     });
 
-    // Explicitly set cookie headers on response to guarantee browser persistence
+    // Explicitly set cookie headers on response to guarantee browser persistence without time limit
     const token = signSession(newProfile, true);
-    const maxAge = 30 * 24 * 60 * 60;
+    const maxAge = 10 * 365 * 24 * 60 * 60; // 10 years (indefinite)
     const secure = isSecureContext();
 
     const response = NextResponse.json({ success: true, user: newProfile });

@@ -32,14 +32,14 @@ export function Navbar() {
 
         {/* Desktop Nav Links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <Link href="/departments" className="hover:text-blue-600 transition-colors">
+            Departments (20)
+          </Link>
+          <Link href="/hospitals" className="hover:text-blue-600 transition-colors">
+            Hospitals
+          </Link>
           <Link href="/#how-it-works" className="hover:text-blue-600 transition-colors">
             How It Works
-          </Link>
-          <Link href="/#features" className="hover:text-blue-600 transition-colors">
-            Features
-          </Link>
-          <Link href="/#benefits" className="hover:text-blue-600 transition-colors">
-            Benefits
           </Link>
           <Link
             href="/emergency"
@@ -81,18 +81,25 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-200 bg-white px-4 pt-3 pb-6 space-y-3">
           <Link
+            href="/departments"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-medium text-slate-700 py-1.5"
+          >
+            Departments (20)
+          </Link>
+          <Link
+            href="/hospitals"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-medium text-slate-700 py-1.5"
+          >
+            Hospitals Directory
+          </Link>
+          <Link
             href="/#how-it-works"
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-medium text-slate-700 py-1.5"
           >
             How It Works
-          </Link>
-          <Link
-            href="/#features"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-medium text-slate-700 py-1.5"
-          >
-            Features
           </Link>
           <Link
             href="/emergency"

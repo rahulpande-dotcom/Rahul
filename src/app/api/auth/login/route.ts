@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
       ipAddress: req.headers.get("x-forwarded-for") || "127.0.0.1",
     });
 
-    // Explicitly set cookie headers on response to guarantee browser persistence
-    const token = signSession(user, Boolean(rememberMe));
-    const maxAge = rememberMe ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+    // Explicitly set cookie headers on response to guarantee browser persistence without time limit
+    const token = signSession(user, true);
+    const maxAge = 10 * 365 * 24 * 60 * 60; // 10 years
     const secure = isSecureContext();
 
     const response = NextResponse.json({ success: true, user });
@@ -73,24 +73,22 @@ export async function POST(req: NextRequest) {
       path: "/",
       maxAge,
     });
-    if (rememberMe) {
-      response.cookies.set(
-        REMEMBER_ME_COOKIE,
-        JSON.stringify({
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          lastLogin: new Date().toISOString(),
-        }),
-        {
-          httpOnly: false,
-          secure,
-          sameSite: "lax",
-          path: "/",
-          maxAge: 30 * 24 * 60 * 60,
-        }
-      );
-    }
+    response.cookies.set(
+      REMEMBER_ME_COOKIE,
+      JSON.stringify({
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        lastLogin: new Date().toISOString(),
+      }),
+      {
+        httpOnly: false,
+        secure,
+        sameSite: "lax",
+        path: "/",
+        maxAge,
+      }
+    );
 
     return response;
   } catch (err: any) {

@@ -78,9 +78,9 @@ export function verifyCaptcha(userInput: string, token: string): boolean {
     const [expectedAnswer, timestampStr, hmac] = raw.split(":");
     if (!expectedAnswer || !timestampStr || !hmac) return false;
 
-    // Verify expiry (valid for 15 minutes)
+    // No time limit: CAPTCHA verification never expires
     const timestamp = parseInt(timestampStr, 10);
-    if (Date.now() - timestamp > 15 * 60 * 1000) {
+    if (isNaN(timestamp)) {
       return false;
     }
 
